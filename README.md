@@ -42,7 +42,7 @@ Tools and evidence sources used:
 
 For the purpose of the **Network Activity Test**, I used a **simple TCP Listener**.
 
-I created a simple TCP Listener using Powershell and the .NET Tcplistener class. It has been configured to listen on 192.168.56.103:8080 and record incoming TCP connections.
+I created a simple TCP Listener using Powershell and the .NET Tcplistener class. It was configured to listen on 192.168.56.103:8080 and record incoming TCP connections.
 
 **Source code:** [PowerShell TCP Listener](scripts/tcp-listener.ps1)
 
@@ -78,6 +78,14 @@ The listener uses TCP port 8080 and records accepted connections in `tcp-fixture
 
 **Step 2 — Test connectivity from Kali**
 
+Start Wireshark on the Kali host-only network interface before running the first Nmap scan. Keep the capture running during both tests to compare the blocked and successful connection attempts.
+
+Wireshark display filter:
+
+```text
+tcp.port == 8080
+```
+
 Run the following Nmap scan:
 
 ```bash
@@ -94,7 +102,7 @@ Open PowerShell as Administrator on Windows:
 
 ```powershell
 New-NetFirewallRule `
-    -Name 'tcp8080' ` 
+    -Name 'tcp8080' `
     -DisplayName 'Lab TCP 8080' `
     -Direction Inbound `
     -Action Allow `
@@ -117,13 +125,7 @@ nmap -sT -Pn -p 8080 192.168.56.103
 
 In my experiment, Nmap now reported `open`.
 
-Use Wireshark on the Kali host-only network interface to capture the traffic.
-
-Display filter:
-
-```text
-tcp.port == 8080
-```
+Use an already running Wireshark on the Kali host-only network interface to capture the traffic.
 
 Look for the TCP three-way handshake:
 
