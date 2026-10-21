@@ -3,7 +3,7 @@
 **Project type:** Home lab / SOC analyst practice  
 **Date:** 21 October 2026  
 **Time zone:** CEST (UTC+02:00)  
-**Lab tests and investigation made by:** Szymon Orzeł (yngxlr8)
+**Lab setup and investigation by:** Szymon Orzeł (yngxlr8)
 
 ## 1. Overview
 
@@ -40,11 +40,118 @@ Tools and evidence sources used:
 
 #### TCP Listener
 
-For the purpose of the **Network Activity Test**, i used a **simple TCP Listener**.
+For the purpose of the **Network Activity Test**, I used a **simple TCP Listener**.
 
-Listener was created using PowerShell and the .NET TcpListener class. It has been configured to listen on 192.168.56.103:8080 and record incoming TCP connections.
+I created a simple TCP Listener using Powershell and the .NET Tcplistener class. It has been configured to listen on 192.168.56.103:8080 and record incoming TCP connections.
 
 **Source code:** [PowerShell TCP Listener](scripts/tcp-listener.ps1)
+
+#### Reproducing the TCP Test
+
+This test demonstrates how Windows Firewall affects access to a TCP listener.
+
+The experiment was performed in an isolated VirtualBox host-only network.
+
+**Requirements:**
+- Windows 11 with PowerShell 5.1
+- Kali Linux (or other linux distro) with Nmap and Wireshark
+- Both machines connected to the same host-only network
+- Administrator access on Windows to configure the firewall
+
+**Step 1 — Start the TCP listener**
+
+On Windows, create the log directory. For example:
+
+```powershell
+New-Item -ItemType Directory -Path "$env:USERPROFILE\CyberLab" -Force | Out-Null
+```
+
+Check the IP address configured in `scripts/tcp-listener.ps1` and change it if necessary.
+
+Run the script from the repository directory:
+
+```powershell
+.\scripts\tcp-listener.ps1
+```
+
+The listener uses TCP port 8080 and records accepted connections in `tcp-fixture.log`.
+
+**Step 2 — Test connectivity from Kali**
+
+Run the following Nmap scan:
+
+```bash
+nmap -sT -Pn -p 8080 192.168.56.103
+```
+
+In my experiment, Nmap initially reported `filtered` because Windows Firewall blocked incoming TCP connections.
+
+The result may be different depending on the current firewall configuration.
+
+**Step 3 — Allow the connection through Windows Firewall**
+
+Open PowerShell as Administrator on Windows:
+
+```powershell
+New-NetFirewallRule `
+    -Name 'tcp8080' ` 
+    -DisplayName 'Lab TCP 8080' `
+    -Direction Inbound `
+    -Action Allow `
+    -Protocol TCP `
+    -LocalAddress '192.168.56.103' `
+    -LocalPort 8080 `
+    -RemoteAddress '192.168.56.102' `
+    -Profile Any
+```
+
+This rule allows incoming TCP connections to port 8080 only from the Kali machine.
+
+**Step 4 — Repeat the scan and inspect the traffic**
+
+Run the Nmap scan again:
+
+```bash
+nmap -sT -Pn -p 8080 192.168.56.103
+```
+
+In my experiment, Nmap now reported `open`.
+
+Use Wireshark on the Kali host-only network interface to capture the traffic.
+
+Display filter:
+
+```text
+tcp.port == 8080
+```
+
+Look for the TCP three-way handshake:
+
+1. SYN — Kali sends a connection request.
+2. SYN/ACK — Windows responds.
+3. ACK — Kali completes the handshake.
+
+On Windows, check the listener log. In this case:
+
+```powershell
+Get-Content "$env:USERPROFILE\CyberLab\tcp-fixture.log" -Tail 5
+```
+
+The log should contain an entry showing an accepted connection from Kali.
+
+**Step 5 — Cleanup**
+
+Stop the listener with `Ctrl+C`.
+
+Remove the temporary firewall rule from an elevated PowerShell session:
+
+```powershell
+Remove-NetFirewallRule -Name 'tcp8080'
+```
+
+The original investigation results, screenshots, and packet analysis are documented in [timeline.md](timeline.md).
+
+**Note:** Run this experiment only in an authorized lab environment.
 
 ## 3. Investigation method
 
@@ -195,7 +302,7 @@ Raw EVTX and packet-capture data are kept **locally**, not published in this rep
 
 | Local evidence                       | Screenshots to reference (in /screenshots directory)                      |
 | ------------------------------------ | ------------------------------------------------------------------------- |
-| `observer-logons.evtx`               | `failedlogon19034.png`, `failedlogon19036.png`, `successedlogon19039.png` |
+| `observer-logons.evtx`               | `failedlogon19034.png`, `failedlogon19036.png`, `successfullogon19039.png` |
 | Windows listening socket and process | `tcpcon-getprocess.png`                                                   |
 | First Nmap scan and SYN attempts     | `nmap-filtered.png`                                                       |
 | `pfirewall.log` DROP entry           | `pfirewalllog.png`                                                        |
