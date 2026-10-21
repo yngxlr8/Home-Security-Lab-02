@@ -4,8 +4,8 @@
 **Time zone:** CEST (UTC+02:00), unless explicitly shown otherwise  
 **Endpoint:** `WIN11` (`192.168.56.103`)  
 **Test client:** `Kali` (`192.168.56.102`)  
-**Scope:** Authorized home-lab activity
-**Lab tests and investigation made by:** Szymon Orzeł (yngxlr8)
+**Scope:** Authorized home-lab activity  
+**Lab setup and investigation by:** Szymon Orzeł (yngxlr8)
 
 This timeline reconstructs three exercises using Windows logs, endpoint commands, Nmap, Wireshark, firewall logs, and local file artifacts. It records **what the evidence shows**, not an assumed attack story. 
 
