@@ -342,6 +342,3 @@ This project taught me to:
 - Avoid claiming a connection between events without supporting evidence.
 
 **Detailed timeline:** [timeline.md](timeline.md)
-
-
-The previous portfolio project, **[Home Security Lab 01 — Linux Services, Network Traffic and Log Correlation](https://github.com/yngxlr8/Home-Security-Lab-01)**
